@@ -16,6 +16,7 @@ Indexing
 4. Build the project and start the indexing:
 ```
     mvn clean compile assembly:single
+    mkdir jdbms
     java -cp target/osmgeocoder-0.0.1-SNAPSHOT-jar-with-dependencies.jar:. org.openstreetmap.osmgeocoder.indexer.IndexerMain india jdbms/india nodes.xml ways.xml relations.xml 
 ```
 Searching
