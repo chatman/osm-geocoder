@@ -5,6 +5,7 @@ import com.vividsolutions.jts.geom.Point;
 import com.vividsolutions.jts.io.WKTReader;
 
 import java.io.File;
+import java.lang.invoke.MethodHandles;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -20,9 +21,13 @@ import org.mapdb.DBMaker;
 import org.openstreetmap.osmgeocoder.indexer.primitives.Node;
 import org.openstreetmap.osmgeocoder.indexer.primitives.Way;
 import org.openstreetmap.osmgeocoder.util.Utils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class StreetIndexer
 {
+  private static final Logger log = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
+
   public static Set<String> acceptedTypes = new HashSet<String>(Arrays.asList(new String[] { "road", "street", "st", "rd", "marg", "lane", 
       "cross", "ln", "bridge", "path", "bypass", "main", "avenue", "trail", "flyover", "sarani", 
       "highway", "salai", "circle", "chowk", "ave", "gali", "link", "bazaar", "galli", "extension", 
@@ -46,7 +51,7 @@ public class StreetIndexer
     int counter = 0;
     int streetCounter = 0;
 
-    System.out.println(wayStore.size() + " ways.");
+    log.info(wayStore.size() + " ways.");
     for (Long id : wayStore.keySet()) {
       Way way = (Way)wayStore.get(id);
 
@@ -104,7 +109,7 @@ public class StreetIndexer
               {
                 if (parent != null) {
                   if (streetCounter % 100 == 0) {
-                    System.out.println(streetCounter + ": " + name + ", " + parent.getFieldValue("name"));
+                    log.info(streetCounter + ": " + name + ", " + parent.getFieldValue("name"));
                   }
 
                   streetCounter++;
@@ -140,7 +145,7 @@ public class StreetIndexer
         }
       }
     }
-    System.out.println(counter + " streets.");
+    log.info(counter + " streets.");
 
     server.commit();
   }

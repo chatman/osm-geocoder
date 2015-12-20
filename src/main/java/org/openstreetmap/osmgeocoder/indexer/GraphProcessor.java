@@ -6,6 +6,7 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.lang.invoke.MethodHandles;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -16,6 +17,8 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 
 import org.openstreetmap.osmgeocoder.indexer.primitives.Node;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import de.normalisiert.utils.graphs.ElementaryCyclesSearch;
 
@@ -79,7 +82,7 @@ class GraphEdge {
 }
 
 public class GraphProcessor {
-  final static boolean debug = false;
+  private static final Logger log = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
   public static void main(String[] args) throws IOException {
     /*List<GraphNode> graphNodes = new ArrayList<GraphNode>();
@@ -114,22 +117,22 @@ public class GraphProcessor {
 			graphEdges.add(to);
 			graphEdges.add(from);
 
-			//System.out.println(points[0]+"\t"+points[1]);
+			//log.info(points[0]+"\t"+points[1]);
 			counter++;
 		}
 
-		System.out.println("Input edges: "+counter);
-		System.out.println("Input nodes: "+counter*2);
+		log.info("Input edges: "+counter);
+		log.info("Input nodes: "+counter*2);
 
-		System.out.println("Graph edges: "+graphEdges.size());
-		System.out.println("Graph nodes: "+graphNodes.size());
+		log.info("Graph edges: "+graphEdges.size());
+		log.info("Graph nodes: "+graphNodes.size());
 
-		System.out.println();
-		System.out.println("Traversing...");
+		log.info();
+		log.info("Traversing...");
 		List<List<GraphNode>> loops = traverse(graphNodes);
 
 		for(List<GraphNode> loop: loops) {
-			System.out.println(">> "+loop.size()+" >> "+loop.get(0).coordinates+" TO "+loop.get(loop.size()-1).coordinates);
+			log.info(">> "+loop.size()+" >> "+loop.get(0).coordinates+" TO "+loop.get(loop.size()-1).coordinates);
 		}
 
 		br.close();*/
@@ -147,7 +150,7 @@ public class GraphProcessor {
      */
     /*for (GraphNode nd: nodes)
 	    if (nd.edges.size()!=2)
-	      System.out.println("--- "+nd+": "+nd.edges.size()+", "+nd.edges.get(0).id+", "+nd.edges.get(0).path);
+	      log.info("--- "+nd+": "+nd.edges.size()+", "+nd.edges.get(0).id+", "+nd.edges.get(0).path);
      */
 
     //	  node: [43.225414, 146.0083]
@@ -155,35 +158,35 @@ public class GraphProcessor {
 
     for(GraphNode n: nodes) {
       if(n.toString().contains("43.225414, 146.0083") || n.toString().contains("44.29978, 145.63457")) {
-        if(debug)System.out.println("Node: "+n+", edges: "+n.edges);
+        log.debug("Node: "+n+", edges: "+n.edges);
       }
 
     }
 
     int c=0;
     for (GraphNode n: nodes) {
-      //System.out.println(">> "+n+", edges="+n.edges.size());
+      //log.info(">> "+n+", edges="+n.edges.size());
       c+=n.edges.size();
     }
-    //System.out.println("Total edges: "+c);
+    //log.info("Total edges: "+c);
 
-    if(debug)System.out.println("Removing stray points, nodes="+nodes.size());
+    log.debug("Removing stray points, nodes="+nodes.size());
     for (int i=0; i<nodes.size(); i++) {
       GraphNode n = nodes.get(i);
       if (n.edges.size()==1) {
         GraphNode prev = n.edges.get(0).dest;
         if(prev == n)
           continue;
-        if(debug)System.out.println("STRAY REMOVAL: prev node had edges: "+prev.edges.size());
+        log.debug("STRAY REMOVAL: prev node had edges: "+prev.edges.size());
         GraphEdge e = new GraphEdge(prev, n, null, "-1");
         prev.edges.remove(e);
-        if(debug)System.out.println("STRAY REMOVAL: Now it has: "+prev.edges.size());
-        if(debug)System.out.println("Previous node: "+prev);
-        if(debug)System.out.println("Removing node: "+nodes.get(i)+"\n");
+        log.debug("STRAY REMOVAL: Now it has: "+prev.edges.size());
+        log.debug("Previous node: "+prev);
+        log.debug("Removing node: "+nodes.get(i)+"\n");
         nodes.remove(i); i--;
       }
     }
-    if(debug)System.out.println("Size of nodes after stray removal: "+nodes.size());
+    log.debug("Size of nodes after stray removal: "+nodes.size());
 
 
 
@@ -206,9 +209,9 @@ public class GraphProcessor {
       GraphNode current = start;
 
       if(current.toString().contains("32.371445, 128.80559"))
-        if(debug)System.out.println("Here begins debug");
+        log.debug("Here begins debug");
 
-      if(debug)System.out.println("Starting with: "+start+", has "+start.visits);
+      log.debug("Starting with: "+start+", has "+start.visits);
 
       if(current.selfPath!=null && current.selfPath.length>2) {
         current.visits++;
@@ -221,7 +224,7 @@ public class GraphProcessor {
       while(loop.contains(current)==false) {
         loop.add(current);
         current.visits++;
-        if(debug)System.out.println(" >>> Visiting: "+current);
+        log.debug(" >>> Visiting: "+current);
         GraphNode next = null;
 
         for (GraphEdge e: current.edges)
@@ -233,9 +236,9 @@ public class GraphProcessor {
         if(next==null && current.edges.size()>0 && loop.size()>0 && current.edges.get(0).dest==loop.get(0))
           next = current.edges.get(0).dest;
         if (next==null) {
-          if(debug)System.out.println("DEADEND");
+          log.debug("DEADEND");
           if(dir==1) {
-            if(debug)System.out.println("Breaking here 1");
+            log.debug("Breaking here 1");
             break;
           }
 
@@ -251,11 +254,11 @@ public class GraphProcessor {
       if(current.equals(loop.get(0))) {
         loop.add(current);
 
-        if(debug)System.out.println("Adding current: "+current+", to the loop: "+loop);
+        log.debug("Adding current: "+current+", to the loop: "+loop);
       }
 
       if (loop.size()==1)
-        if(debug)System.out.println("Size 1:"+ loop);
+        log.debug("Size 1:"+ loop);
       List<Integer> canBeJoinedWith = new ArrayList<Integer>();
       for (int i=0; i<loops.size(); i++) {
         List<GraphNode> prev = loops.get(i);
@@ -310,7 +313,7 @@ public class GraphProcessor {
           prev.addAll(loop);
         }
 
-        //System.out.println("Joined with loop: "+maxLoop+" of size: "+maxSize+". Now size of loop is: "+prev.size());
+        //log.info("Joined with loop: "+maxLoop+" of size: "+maxSize+". Now size of loop is: "+prev.size());
 
       } else {
         GraphEdge edge = new GraphEdge(loop.get(0), loop.get(loop.size()-1), null, "-2");
@@ -321,7 +324,7 @@ public class GraphProcessor {
           loops.add(loop);
         } else if (loop.size()==1 && loop.get(0).selfPath!=null && loop.get(0).selfPath.length>2) {
           loops.add(loop);
-          if(debug)System.out.println("Self loop: "+loop);
+          log.debug("Self loop: "+loop);
         }
 
       }

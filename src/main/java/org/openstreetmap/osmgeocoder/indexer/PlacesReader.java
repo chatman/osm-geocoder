@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
+import java.lang.invoke.MethodHandles;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -16,9 +17,13 @@ import org.mapdb.DB;
 import org.mapdb.DBMaker;
 import org.openstreetmap.osmgeocoder.indexer.primitives.Node;
 import org.openstreetmap.osmgeocoder.indexer.primitives.Way;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class PlacesReader
 {
+  private static final Logger log = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
+
   void read(DB mapDb, String placesFile, String poisFile)
       throws IOException
   {
@@ -51,12 +56,12 @@ public class PlacesReader
       counter++;
 
       if (counter % 1000000 == 0) {
-        System.out.println(counter + " (Places: " + places.size() + ", Pois: " + pois.size() + ")");
+        log.info(counter + " (Places: " + places.size() + ", Pois: " + pois.size() + ")");
         mapDb.commit();
       }
     }
 
-    System.out.println("Reading ways...");
+    log.info("Reading ways...");
     counter = 0;
     for (Long id : wayStore.keySet()) {
       Way way = (Way)wayStore.get(id);
@@ -74,7 +79,7 @@ public class PlacesReader
         e.printStackTrace();
       }
       if (counter % 100000 == 0) {
-        System.out.println(counter + " (Places: " + places.size() + ", Pois: " + pois.size() + ")");
+        log.info(counter + " (Places: " + places.size() + ", Pois: " + pois.size() + ")");
       }
     }
     FileOutputStream fout = new FileOutputStream(placesFile);
@@ -88,7 +93,7 @@ public class PlacesReader
     oos.close();
 
     mapDb.commit();
-    System.out.println("Time: " + new Date());
+    log.info("Time: " + new Date());
   }
 
   public static void main(String[] args)

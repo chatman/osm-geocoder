@@ -7,6 +7,7 @@ import com.vividsolutions.jts.io.WKTReader;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.invoke.MethodHandles;
 import java.util.Date;
 import java.util.List;
 
@@ -21,10 +22,12 @@ import org.mapdb.DB;
 import org.mapdb.DBMaker;
 import org.openstreetmap.osmgeocoder.indexer.primitives.Node;
 import org.openstreetmap.osmgeocoder.util.Utils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class AdminPolygonIndexer
 {
-  public static boolean debug = false; 
+  private static final Logger log = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
   final int PRINTINTERVAL = 1;
 
@@ -33,9 +36,9 @@ public class AdminPolygonIndexer
   {
     AdminPolygonReader reader = new AdminPolygonReader();
     reader.read(mapDb, ""+adminLevel);
-    System.out.println("AdminPolygonReader done.");
+    log.info("AdminPolygonReader done.");
 
-    System.out.println("Numbers of admin areas read: "+reader.places.size());
+    log.info("Numbers of admin areas read: "+reader.places.size());
 
     int counter = 0;
 
@@ -55,7 +58,7 @@ public class AdminPolygonIndexer
         StringBuilder wkt = new StringBuilder();
 
         if (counter % PRINTINTERVAL == 0) {
-          System.out.println(counter + ": " + doc.get("name") + ",\t" + "Points = " + nodes.size());
+          log.info(counter + ": " + doc.get("name") + ",\t" + "Points = " + nodes.size());
         }
         if (nodes.size() >= 2)
         {
@@ -85,7 +88,7 @@ public class AdminPolygonIndexer
 
           if (!pol.isValid()) {
             Geometry repaired = pol.buffer(0.0D);
-            System.out.println("Invalid polygon detected. Is fixed? " + repaired.isValid());
+            log.info("Invalid polygon detected. Is fixed? " + repaired.isValid());
             wkt = new StringBuilder(repaired.toText());
           }
 
@@ -98,7 +101,7 @@ public class AdminPolygonIndexer
           if (parent != null) {
             doc.addField("admin" + l, parent.get("name"));
           }
-          if(debug) System.out.println("Parent of "+admin.tags.get("name")+" at level "+l+": "+(parent!=null?parent.get("name"):null));
+          log.debug("Parent of "+admin.tags.get("name")+" at level "+l+": "+(parent!=null?parent.get("name"):null));
         }
       try
       {
@@ -126,9 +129,9 @@ public class AdminPolygonIndexer
     indexer.indexPolygons(server, db, 4);
     //indexer.indexPolygons(server, db, 5);
 
-    System.out.println("Committing...");
+    log.info("Committing...");
     server.commit();
 
-    System.out.println("Done! "+new Date());
+    log.info("Done! "+new Date());
   }
 }

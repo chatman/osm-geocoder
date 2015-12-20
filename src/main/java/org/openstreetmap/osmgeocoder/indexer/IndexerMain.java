@@ -2,6 +2,7 @@ package org.openstreetmap.osmgeocoder.indexer;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.invoke.MethodHandles;
 import java.util.Date;
 
 import org.apache.solr.client.solrj.SolrServer;
@@ -10,11 +11,15 @@ import org.apache.solr.client.solrj.impl.ConcurrentUpdateSolrServer;
 import org.apache.solr.client.solrj.impl.HttpSolrServer;
 import org.mapdb.DB;
 import org.mapdb.DBMaker;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.vividsolutions.jts.io.ParseException;
 
 public class IndexerMain
 {
+  private static final Logger log = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
+  
   static String country = "asia";
   static String jdbm = "jdbm/test";
   static String nodesFilename = "/bigdata/datasets/nodes.xml";
@@ -51,19 +56,19 @@ public class IndexerMain
     mapDb = DBMaker.newFileDB(new File(jdbm)).closeOnJvmShutdown().transactionDisable().asyncWriteEnable().make();
 
     if (delete) {
-      System.out.println("Deleting docs..");
+      log.info("Deleting docs..");
       server.deleteByQuery("*:*");
       server.commit();
-      System.out.println("Deleted.");
+      log.info("Deleted.");
     }
 
     if (osmRead) {
-      System.out.println("---- OSM reader starting ----" + new Date());
+      log.info("---- OSM reader starting ----" + new Date());
       OsmReaderFromSplit osmReader = new OsmReaderFromSplit(nodesFilename, waysFilename, relationsFilename);
       osmReader.read(mapDb);
-      System.out.println("---- OSM reader done ----" + new Date());
+      log.info("---- OSM reader done ----" + new Date());
     }
-    System.out.println("---- Polygon indexing starting ----" + new Date());
+    log.info("---- Polygon indexing starting ----" + new Date());
 
     Thread thread1 = new Thread() {
       public void run() {
@@ -73,7 +78,7 @@ public class IndexerMain
           polygonIndexer.indexPolygons(IndexerMain.server, IndexerMain.mapDb, 2);
           polygonIndexer.indexPolygons(IndexerMain.server, IndexerMain.mapDb, 4);
           polygonIndexer.indexPolygons(IndexerMain.server, IndexerMain.mapDb, 5);
-          System.out.println("Committing...");
+          log.info("Committing...");
           IndexerMain.server.commit();
         } catch (Exception e) {
           e.printStackTrace();
@@ -82,7 +87,7 @@ public class IndexerMain
     };
     thread1.start();
 
-    System.out.println("---- Places reader starting ----" + new Date());
+    log.info("---- Places reader starting ----" + new Date());
     Thread thread2 = new Thread() {
       public void run() {
         PlacesReader reader = new PlacesReader();
@@ -97,12 +102,12 @@ public class IndexerMain
     thread2.start();
 
     thread1.join();
-    System.out.println("---- Polygon indexing done ----" + new Date());
+    log.info("---- Polygon indexing done ----" + new Date());
 
     thread2.join();
-    System.out.println("---- Places reader done ----" + new Date());
+    log.info("---- Places reader done ----" + new Date());
 
-    System.out.println("---- Places indexing starting ----" + new Date());
+    log.info("---- Places indexing starting ----" + new Date());
 
     placesIndexer = new PlacesIndexer("places." + country + ".ser");
     placesIndexer.indexCitiesAndTowns(server);
@@ -121,7 +126,7 @@ public class IndexerMain
     };
 
 
-    System.out.println("---- Streets indexing started ----" + new Date());
+    log.info("---- Streets indexing started ----" + new Date());
     Thread thread4 = new Thread() {
       public void run() {
         try {
@@ -137,10 +142,10 @@ public class IndexerMain
     thread4.start();
 
     thread4.join();
-    System.out.println("---- Streets indexing done ----" + new Date());
+    log.info("---- Streets indexing done ----" + new Date());
 
     thread3.join();
-    System.out.println("---- Places indexing done ----" + new Date());
+    log.info("---- Places indexing done ----" + new Date());
 
     server.commit();
     placesServer.commit();

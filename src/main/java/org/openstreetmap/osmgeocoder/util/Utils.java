@@ -1,5 +1,6 @@
 package org.openstreetmap.osmgeocoder.util;
 
+import java.lang.invoke.MethodHandles;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -16,10 +17,12 @@ import org.apache.solr.client.solrj.response.QueryResponse;
 import org.apache.solr.common.SolrDocument;
 import org.apache.solr.common.SolrDocumentList;
 import org.openstreetmap.osmgeocoder.indexer.primitives.Node;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class Utils
 {
-  public static boolean debug = false; 
+  private static final Logger log = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
   
   public static SolrDocument getContainingPolygon(SolrServer server, Node place, int level)
       throws ParseException, SolrServerException
@@ -58,7 +61,7 @@ public class Utils
       return null;
     }
 
-    if(debug) System.out.println("Trying get parent query: "+query);
+    log.debug("Trying get parent query: "+query);
     QueryResponse response = server.query(query);
     SolrDocument ans = null;
 
@@ -76,16 +79,16 @@ public class Utils
         if (geom.contains(point)) {
           ans = doc;
           counter++;
-          if(debug) System.out.println("Passed to contain geometry: "+geom.getNumPoints()+", "+point);
+          log.debug("Passed to contain geometry: "+geom.getNumPoints()+", "+point);
         } else {
-          if(debug) System.out.println("Failed to contain geometry: "+geom.getNumPoints()+", "+point);
+          log.debug("Failed to contain geometry: "+geom.getNumPoints()+", "+point);
         }
       }
 
     }
 
     if (counter != 1) {
-      if(debug) System.out.println("Counter was: "+counter);
+      log.debug("Counter was: "+counter);
       return null;
     }
     return ans;

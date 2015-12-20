@@ -3,6 +3,7 @@ package org.openstreetmap.osmgeocoder.indexer;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.lang.invoke.MethodHandles;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -21,6 +22,8 @@ import org.openstreetmap.osmgeocoder.indexer.primitives.Node;
 import org.openstreetmap.osmgeocoder.indexer.primitives.Relation;
 import org.openstreetmap.osmgeocoder.indexer.primitives.Way;
 import org.openstreetmap.osmgeocoder.util.Utils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.vividsolutions.jts.geom.Geometry;
 import com.vividsolutions.jts.geom.Polygon;
@@ -29,7 +32,8 @@ import com.vividsolutions.jts.io.WKTReader;
 
 
 public class AdminPolygonReader {
-  public final static boolean debug = false;
+  private static final Logger log = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
+
   List<AdminPolygon> places = new ArrayList<AdminPolygon>();
 
 
@@ -43,25 +47,22 @@ public class AdminPolygonReader {
     for (Long id: relationStore.keySet()) {
       totalRelCounter++;
       if(totalRelCounter%10000==0)
-        System.out.println("Rel counter: "+totalRelCounter+", adminLevels added="+relations.size()/*+relations.size()*/);
+        log.info("Rel counter: "+totalRelCounter+", adminLevels added="+relations.size()/*+relations.size()*/);
 
       Relation rel = relationStore.get(id);
       if (adminLevel.equals(rel.tags.get("admin_level")))
         relations.add(rel);
     }
 
-    System.out.println("Found "+relations.size()+" relations. Processing...");
+    log.info("Found "+relations.size()+" relations. Processing...");
 
 
-    //	System.out.println();
+    //	log.info();
     FileWriter out = new FileWriter("states.txt");
     Map<String, FileWriter> countryPolyFiles = new HashMap<String, FileWriter>();
     for (Relation rel: relations) {
 
       String name = rel.tags.get("name");
-
-      if(debug)if("Japan".equals(name)==false)
-        continue;
 
       int totalNodes = 0;
 
@@ -70,12 +71,6 @@ public class AdminPolygonReader {
           totalNodes+=((Way)m.member).numNodes();
         }
       }
-
-      if(debug)
-        if((adminLevel.equals("2") ) && name!=null) {
-          countryPolyFiles.put(name, new FileWriter("graph_output_postrefactor."+name));
-          //System.out.println("Found country: "+name);
-        }
 
       int ways = 0, nodes = 0;
       Set<String> roles = new HashSet<String>();
@@ -93,16 +88,13 @@ public class AdminPolygonReader {
 
           Way way = (Way)m.member;
 
-          //System.out.println(way.nodes.get(0)+"->"+way.nodes.get(way.nodes.size()-1));
-          if(debug)if((adminLevel.equals("2") ) && name!=null)
-            countryPolyFiles.get(name).write(Arrays.toString(way.getNode(0))+"->"+Arrays.toString(way.getNode(way.numNodes()-1))+"\n");
-
+          //log.info(way.nodes.get(0)+"->"+way.nodes.get(way.nodes.size()-1));
           GraphNode src = new GraphNode(Arrays.toString(way.getNode(0)));
           GraphNode dest = new GraphNode(Arrays.toString(way.getNode(way.numNodes()-1)));
 
-          if(debug)System.out.println(src+"->"+dest+", size="+way.numNodes());
+          log.debug(src+"->"+dest+", size="+way.numNodes());
           /*for (int i=0; i<way.numNodes(); i++) {
-					  System.out.println("Way point "+i+": "+Arrays.toString(way.getNode(i)));
+					  log.info("Way point "+i+": "+Arrays.toString(way.getNode(i)));
 					}*/
 
           if(graphNodes.contains(src))
@@ -127,9 +119,9 @@ public class AdminPolygonReader {
           GraphEdge from = new GraphEdge(dest, src, reversedWayNodes, ""+way.id);
 
 
-          //System.out.println("ALL: "+to+", id="+to.id);
+          //log.info("ALL: "+to+", id="+to.id);
           //          if (way.id.equals("219576421"))
-          //            System.out.println("219576421: "+to.path);
+          //            log.info("219576421: "+to.path);
 
           //if(src.edges.contains(to)==false)
           src.edges.add(to);
@@ -150,7 +142,7 @@ public class AdminPolygonReader {
       for(List<GraphNode> loop: loops) {
         List<Node> poly = new ArrayList<Node>();
         if (loop.size()==1) {
-          if(debug)System.out.println("Self loop came: "+loop);
+          log.debug("Self loop came: "+loop);
           poly.addAll(Utils.nodesFromPoints(loop.get(0).selfPath));
         }
         else
@@ -180,25 +172,25 @@ public class AdminPolygonReader {
       }
 
 
-      //System.out.println("Max size poly = "+maxSizePoly);
+      //log.info("Max size poly = "+maxSizePoly);
       int processedNodes = 0;
       for(List<Node> poly: multipoly)
         processedNodes+=poly.size();
       if(totalNodes>0)
-        System.out.println(name+": "+processedNodes+"/"+totalNodes+" ("+(processedNodes*100/totalNodes)+"%), polygons="+multipoly.size());
+        log.info(name+": "+processedNodes+"/"+totalNodes+" ("+(processedNodes*100/totalNodes)+"%), polygons="+multipoly.size());
 
       if (multipoly.size()>0 && rel.tags.containsKey("name")) {
         places.add(new AdminPolygon(rel.id, rel.tags, rolesList, multipoly));
 
-        //System.out.println(rel.tags.get("name")+": "+ways+", "+nodes+", roles="+roles+", Multipoly="+multipoly.size()+", RolesList="+rolesList.size());
-        //System.out.println("isin: "+rel.tags.get("is_in:country_code"));
-        //System.out.println(rel.tags);
+        //log.info(rel.tags.get("name")+": "+ways+", "+nodes+", roles="+roles+", Multipoly="+multipoly.size()+", RolesList="+rolesList.size());
+        //log.info("isin: "+rel.tags.get("is_in:country_code"));
+        //log.info(rel.tags);
       }
       //}
       //}
     }
     out.close();
-    if(debug)for(String c: countryPolyFiles.keySet())
+    for(String c: countryPolyFiles.keySet())
       countryPolyFiles.get(c).close();
   }
 
@@ -211,9 +203,9 @@ public class AdminPolygonReader {
 
 //    for (AdminPolygon poly: reader.places) {
 //      if (poly.tags.get("name").startsWith("Uttar ")) {
-//        System.out.println(poly.tags.get("name")+"\t"+poly.multipoly.size() + " polygons.");
+//        log.info(poly.tags.get("name")+"\t"+poly.multipoly.size() + " polygons.");
 //        for (List<Node> p: poly.multipoly) {
-//          System.out.println("  >>  "+p.size()+", \t");
+//          log.info("  >>  "+p.size()+", \t");
 //          createGeom(p);
 //        }
 //      }
@@ -244,7 +236,7 @@ public class AdminPolygonReader {
 
     if (!pol.isValid()) {
       Geometry repaired = pol.buffer(0.0D);
-      System.out.println("Invalid polygon detected. Is fixed? " + repaired.isValid());
+      log.info("Invalid polygon detected. Is fixed? " + repaired.isValid());
       wkt = new StringBuilder(repaired.toText());
     }
     

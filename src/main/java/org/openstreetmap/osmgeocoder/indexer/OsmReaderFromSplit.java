@@ -6,6 +6,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.lang.invoke.MethodHandles;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -24,9 +25,13 @@ import org.openstreetmap.osmgeocoder.indexer.primitives.Node;
 import org.openstreetmap.osmgeocoder.indexer.primitives.Relation;
 import org.openstreetmap.osmgeocoder.indexer.primitives.Way;
 import org.openstreetmap.osmgeocoder.util.BloomFilter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class OsmReaderFromSplit
 {
+  private static final Logger log = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
+
   DB mapDb;
   Map<Long, Node> nodeStore;
   Map<Long, Way> wayStore;
@@ -65,21 +70,21 @@ public class OsmReaderFromSplit
     this.relationStore = db.getTreeMap("relationStore");
 
 
-    System.out.println(new Date());
+    log.info(new Date().toString());
     parse(RELATIONS, PREPROCESS);
-    System.out.println(new Date());
+    log.info(new Date().toString());
     parse(WAYS, PREPROCESS);
-    System.out.println(new Date());
+    log.info(new Date().toString());
     parse(NODES, PROCESS);
-    System.out.println(new Date());
-    System.out.println("Compacting...");
+    log.info(new Date().toString());
+    log.info("Compacting...");
     db.compact();
     db.commit();
-    System.out.println(new Date());
+    log.info(new Date().toString());
     parse(WAYS, PROCESS);
-    System.out.println(new Date());
+    log.info(new Date().toString());
     parse(RELATIONS, PROCESS);
-    System.out.println(new Date());
+    log.info(new Date().toString());
   }
 
   private void parse(int type, int mode) throws FileNotFoundException, IOException, ClassNotFoundException {
@@ -160,7 +165,7 @@ public class OsmReaderFromSplit
         }
 
         if (this.counter % (INTERVAL * 1) == 0) {
-          System.out.println("Nodes: "+passed+"/"+counter+" ("+((passed*100.0)/(double)counter)+")");
+          log.info("Nodes: "+passed+"/"+counter+" ("+((passed*100.0)/(double)counter)+")");
           OsmReaderFromSplit.this.mapDb.commit();
         }
       }
@@ -183,7 +188,7 @@ public class OsmReaderFromSplit
           }
         }
         if (this.counter % (INTERVAL * 1) == 0) {
-          System.out.println("Ways: "+passed+"/"+counter+" ("+((passed*100.0)/(double)counter)+")");
+          log.info("Ways: "+passed+"/"+counter+" ("+((passed*100.0)/(double)counter)+")");
         }
       }
     };
@@ -217,8 +222,8 @@ public class OsmReaderFromSplit
           }
         }
         if (this.counter % (INTERVAL * 1) == 0) {
-          System.out.println("Ways: "+passed+"/"+counter+" ("+((passed*100.0)/(double)counter)+")");
-          System.out.println("Failed node lookups: "+failed);
+          log.info("Ways: "+passed+"/"+counter+" ("+((passed*100.0)/(double)counter)+")");
+          log.info("Failed node lookups: "+failed);
           OsmReaderFromSplit.this.mapDb.commit();
         }
       }
@@ -260,7 +265,7 @@ public class OsmReaderFromSplit
         }
 
         if (this.counter % (INTERVAL * 1) == 0) {
-          System.out.println("Relations: "+passed+"/"+counter+" ("+((passed*100.0)/(double)counter)+")");
+          log.info("Relations: "+passed+"/"+counter+" ("+((passed*100.0)/(double)counter)+")");
           OsmReaderFromSplit.this.mapDb.commit();
         }
 
@@ -312,7 +317,7 @@ public class OsmReaderFromSplit
         }
 
         if (this.counter % (INTERVAL * 1) == 0) {
-          System.out.println("Relations: "+passed+"/"+counter+" ("+((passed*100.0)/(double)counter)+")");
+          log.info("Relations: "+passed+"/"+counter+" ("+((passed*100.0)/(double)counter)+")");
           OsmReaderFromSplit.this.mapDb.commit();
         }
 
@@ -362,7 +367,7 @@ public class OsmReaderFromSplit
     OsmReaderFromSplit reader = new OsmReaderFromSplit("/data/datasets/nodes.xml", "/data/datasets/ways.xml", "/data/datasets/relations.xml");
     reader.read(db);
 
-    System.out.println("Done! "+new Date());
+    log.info("Done! "+new Date());
 
   }
 }

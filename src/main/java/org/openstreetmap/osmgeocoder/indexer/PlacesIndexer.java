@@ -8,6 +8,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
+import java.lang.invoke.MethodHandles;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashSet;
@@ -25,9 +26,13 @@ import org.mapdb.DBMaker;
 import org.openstreetmap.osmgeocoder.indexer.primitives.Node;
 import org.openstreetmap.osmgeocoder.indexer.primitives.Way;
 import org.openstreetmap.osmgeocoder.util.Utils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class PlacesIndexer
 {
+  private static final Logger log = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
+
   String placesFilename;
   Set<String> poiKeys = new HashSet<String>(
       Arrays.asList(new String[] { "leisure", "amenity", 
@@ -71,7 +76,7 @@ public class PlacesIndexer
         doc.addField("geo", place.lat + "," + place.lng);
 
         if (counter % 100 == 0) {
-          System.out.println(counter + ": " + doc);
+          log.info(counter + ": " + doc);
         }
 
         server.add(doc);
@@ -146,7 +151,7 @@ public class PlacesIndexer
         doc.addField("geo", place.lat + "," + place.lng);
 
         if (counter % 100 == 0) {
-          System.out.println(counter + ": " + doc);
+          log.info(counter + ": " + doc);
         }
         server.add(doc);
 
@@ -155,7 +160,7 @@ public class PlacesIndexer
 
     }
 
-    System.out.println(counter);
+    log.info("Counter: "+counter);
     server.commit();
   }
 
@@ -232,12 +237,12 @@ public class PlacesIndexer
       doc.addField("geo", node.lat + "," + node.lng);
 
       if (counter % 10000 == 0) {
-        System.out.println(counter + ": " + doc);
+        log.info(counter + ": " + doc);
       }
       if (counter % 100000 == 0) {
-        System.out.println("Running gc, "+new Date());
+        log.info("Running gc, "+new Date());
         Runtime.getRuntime().gc();
-        System.out.println("Done gc, "+new Date());
+        log.info("Done gc, "+new Date());
       }
 
       placesServer.add(doc);

@@ -1,12 +1,17 @@
 package org.openstreetmap.osmgeocoder.indexer;
 
+import java.lang.invoke.MethodHandles;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class GraphCycleFinder {
+  private static final Logger log = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
   //  Graph modeled as list of edges
-
+  
 
   static List<int[]> cycles = new ArrayList<int[]>();
 
@@ -36,7 +41,7 @@ public class GraphCycleFinder {
 			}
 
 			o(s);*/
-      System.out.println("Cycle of length: "+cy.length);
+      log.info("Cycle of length: "+cy.length);
     }
 
   }
@@ -142,7 +147,7 @@ public class GraphCycleFinder {
 
   static void o(String s)
   {
-    System.out.println(s);
+    log.info(s);
   }
 
   //  return the int of the array which is the smallest
