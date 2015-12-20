@@ -53,6 +53,6 @@ implements Serializable
 	}
 
 	public String toString() {
-		return ""+id; //"[" + this.lat + "," + this.lng + "]";
+		return /*""+id; //*/"[" + this.lat + "," + this.lng + "]";
 	}
 }

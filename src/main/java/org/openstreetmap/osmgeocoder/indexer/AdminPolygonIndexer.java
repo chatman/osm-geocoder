@@ -24,6 +24,7 @@ import org.openstreetmap.osmgeocoder.util.Utils;
 
 public class AdminPolygonIndexer
 {
+  public static boolean debug = false; 
 
   final int PRINTINTERVAL = 1;
 
@@ -94,8 +95,10 @@ public class AdminPolygonIndexer
       if (centroid != null)
         for (int l = 1; l < adminLevel; l++) {
           SolrDocument parent = Utils.getContainingPolygon(server, (float)centroid.getY(), (float)centroid.getX(), l);
-          if (parent != null)
+          if (parent != null) {
             doc.addField("admin" + l, parent.get("name"));
+          }
+          if(debug) System.out.println("Parent of "+admin.tags.get("name")+" at level "+l+": "+(parent!=null?parent.get("name"):null));
         }
       try
       {
@@ -117,11 +120,11 @@ public class AdminPolygonIndexer
 
     AdminPolygonIndexer indexer = new AdminPolygonIndexer();
 
-    DB db = DBMaker.newFileDB(new File("jdbm/test")).closeOnJvmShutdown().make();
+    DB db = DBMaker.newFileDB(new File("jdbms/india")).closeOnJvmShutdown().transactionDisable().asyncWriteEnable().make();
 
     //indexer.indexPolygons(server, db, 2);
-    //indexer.indexPolygons(server, db, 4);
-    indexer.indexPolygons(server, db, 5);
+    indexer.indexPolygons(server, db, 4);
+    //indexer.indexPolygons(server, db, 5);
 
     System.out.println("Committing...");
     server.commit();
@@ -129,8 +132,3 @@ public class AdminPolygonIndexer
     System.out.println("Done! "+new Date());
   }
 }
-
-/* Location:           /data/indexer-main.jar
- * Qualified Name:     org.openstreetmap.osmgeocoder.indexer.AdminPolygonIndexer
- * JD-Core Version:    0.6.2
- */

@@ -22,6 +22,11 @@ import org.openstreetmap.osmgeocoder.indexer.primitives.Relation;
 import org.openstreetmap.osmgeocoder.indexer.primitives.Way;
 import org.openstreetmap.osmgeocoder.util.Utils;
 
+import com.vividsolutions.jts.geom.Geometry;
+import com.vividsolutions.jts.geom.Polygon;
+import com.vividsolutions.jts.io.ParseException;
+import com.vividsolutions.jts.io.WKTReader;
+
 
 public class AdminPolygonReader {
   public final static boolean debug = false;
@@ -198,23 +203,58 @@ public class AdminPolygonReader {
   }
 
   public static void main(String[] args) throws Exception {
-    DB db = DBMaker.newFileDB(new File("jdbm/test")).closeOnJvmShutdown().make();
+    DB db = DBMaker.newFileDB(new File("jdbms/india")).closeOnJvmShutdown().transactionDisable().asyncWriteEnable().make();
     AdminPolygonReader reader = new AdminPolygonReader();
-    reader.read(db, ""+2);
+    reader.read(db, ""+4);
 
     System.out.println(reader.places.size());
 
-    for (AdminPolygon poly: reader.places) {
-
-      //System.out.print(poly.tags.get("name")+"\t");
-      //System.out.println(poly.multipoly.size() + " polygons.");
-      //for (List<Node> p: poly.multipoly)
-      //System.out.println("  >>  "+p.size()+", \t"+p);
-      //for (List<Node> node: poly.multipoly)
-      //System.out.println("Size: "+node.size());
-    }
+//    for (AdminPolygon poly: reader.places) {
+//      if (poly.tags.get("name").startsWith("Uttar ")) {
+//        System.out.println(poly.tags.get("name")+"\t"+poly.multipoly.size() + " polygons.");
+//        for (List<Node> p: poly.multipoly) {
+//          System.out.println("  >>  "+p.size()+", \t");
+//          createGeom(p);
+//        }
+//      }
+//    }
 
     System.out.println(new Date());
+  }
+  
+  public static void createGeom (List<Node> nodes) {
+    StringBuilder wkt = new StringBuilder();
+    for (Node node : nodes)
+      wkt.append(node.lng + " " + node.lat + ", ");
+    wkt.delete(wkt.length() - 2, wkt.length());
+
+    wkt.insert(0, "POLYGON((");
+    wkt.append("))");
+
+    WKTReader wktreader = new WKTReader();
+    Geometry geom = null;
+    try
+    {
+      geom = wktreader.read(wkt.toString());
+    } catch (Exception ex) {
+      ex.printStackTrace();
+    }
+
+    Polygon pol = (Polygon)geom;
+
+    if (!pol.isValid()) {
+      Geometry repaired = pol.buffer(0.0D);
+      System.out.println("Invalid polygon detected. Is fixed? " + repaired.isValid());
+      wkt = new StringBuilder(repaired.toText());
+    }
+    
+    try {
+      System.out.println(pol.contains(wktreader.read("POINT(82 25)")));
+    } catch (ParseException e) {
+      // TODO Auto-generated catch block
+      e.printStackTrace();
+    }
+    
   }
 
 }
