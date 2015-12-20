@@ -235,8 +235,3 @@ implements Cloneable, Serializable
 		System.out.println(mm.getValues("london"));
 	}
 }
-
-/* Location:           /data/indexer-main.jar
- * Qualified Name:     org.openstreetmap.osmgeocoder.util.MultiMap
- * JD-Core Version:    0.6.2
- */

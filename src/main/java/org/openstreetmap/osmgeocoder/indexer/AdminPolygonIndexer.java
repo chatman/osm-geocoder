@@ -24,110 +24,110 @@ import org.openstreetmap.osmgeocoder.util.Utils;
 
 public class AdminPolygonIndexer
 {
-	
-	final int PRINTINTERVAL = 1;
-	
-	void indexPolygons(SolrServer server, DB mapDb, int adminLevel)
-			throws ClassNotFoundException, IOException, com.vividsolutions.jts.io.ParseException, SolrServerException
-			{
-		AdminPolygonReader reader = new AdminPolygonReader();
-		reader.read(mapDb, ""+adminLevel);
-		System.out.println("AdminPolygonReader done.");
-		
-		System.out.println("Numbers of admin areas read: "+reader.places.size());
 
-		int counter = 0;
+  final int PRINTINTERVAL = 1;
 
-		for (AdminPolygon admin : reader.places)
-		{
-			SolrInputDocument doc = new SolrInputDocument();
-			doc.addField("name", admin.tags.get("name"));
-			doc.addField("admin" + adminLevel, admin.tags.get("name"));
-			doc.addField("id", admin.id);
-			doc.addField("level", Integer.valueOf(adminLevel));
+  void indexPolygons(SolrServer server, DB mapDb, int adminLevel)
+      throws ClassNotFoundException, IOException, com.vividsolutions.jts.io.ParseException, SolrServerException
+  {
+    AdminPolygonReader reader = new AdminPolygonReader();
+    reader.read(mapDb, ""+adminLevel);
+    System.out.println("AdminPolygonReader done.");
 
-			int maxSize = 0;
-			Point centroid = null;
+    System.out.println("Numbers of admin areas read: "+reader.places.size());
 
-			for (List<Node> nodes : admin.multipoly)
-			{
-				StringBuilder wkt = new StringBuilder();
+    int counter = 0;
 
-				if (counter % PRINTINTERVAL == 0) {
-					System.out.println(counter + ": " + doc.get("name") + ",\t" + "Points = " + nodes.size());
-				}
-				if (nodes.size() >= 2)
-				{
-					for (Node node : nodes)
-						wkt.append(node.lng + " " + node.lat + ", ");
-					wkt.delete(wkt.length() - 2, wkt.length());
+    for (AdminPolygon admin : reader.places)
+    {
+      SolrInputDocument doc = new SolrInputDocument();
+      doc.addField("name", admin.tags.get("name"));
+      doc.addField("admin" + adminLevel, admin.tags.get("name"));
+      doc.addField("id", admin.id);
+      doc.addField("level", Integer.valueOf(adminLevel));
 
-					wkt.insert(0, "POLYGON((");
-					wkt.append("))");
+      int maxSize = 0;
+      Point centroid = null;
 
-					WKTReader wktreader = new WKTReader();
-					Geometry geom = null;
-					try
-					{
-						geom = wktreader.read(wkt.toString());
-					} catch (Exception ex) {
-						ex.printStackTrace();
-						continue;
-					}
+      for (List<Node> nodes : admin.multipoly)
+      {
+        StringBuilder wkt = new StringBuilder();
 
-					if (nodes.size() > maxSize) {
-						centroid = geom.getCentroid();
-						maxSize = nodes.size();
-					}
+        if (counter % PRINTINTERVAL == 0) {
+          System.out.println(counter + ": " + doc.get("name") + ",\t" + "Points = " + nodes.size());
+        }
+        if (nodes.size() >= 2)
+        {
+          for (Node node : nodes)
+            wkt.append(node.lng + " " + node.lat + ", ");
+          wkt.delete(wkt.length() - 2, wkt.length());
 
-					Polygon pol = (Polygon)geom;
+          wkt.insert(0, "POLYGON((");
+          wkt.append("))");
 
-					if (!pol.isValid()) {
-						Geometry repaired = pol.buffer(0.0D);
-						System.out.println("Invalid polygon detected. Is fixed? " + repaired.isValid());
-						wkt = new StringBuilder(repaired.toText());
-					}
+          WKTReader wktreader = new WKTReader();
+          Geometry geom = null;
+          try
+          {
+            geom = wktreader.read(wkt.toString());
+          } catch (Exception ex) {
+            ex.printStackTrace();
+            continue;
+          }
 
-					doc.addField("geo", wkt);
-				}
-			}
-			if (centroid != null)
-				for (int l = 1; l < adminLevel; l++) {
-					SolrDocument parent = Utils.getContainingPolygon(server, (float)centroid.getY(), (float)centroid.getX(), l);
-					if (parent != null)
-						doc.addField("admin" + l, parent.get("name"));
-				}
-			try
-			{
-				server.add(doc);
-			} catch (Exception ex) {
-				System.err.println("Document failed: " + ex);
-			}
+          if (nodes.size() > maxSize) {
+            centroid = geom.getCentroid();
+            maxSize = nodes.size();
+          }
 
-			counter++;
-		}
+          Polygon pol = (Polygon)geom;
 
-		server.commit();
-			}
+          if (!pol.isValid()) {
+            Geometry repaired = pol.buffer(0.0D);
+            System.out.println("Invalid polygon detected. Is fixed? " + repaired.isValid());
+            wkt = new StringBuilder(repaired.toText());
+          }
 
-	public static void main(String[] args)
-			throws SolrServerException, IOException, ClassNotFoundException, java.text.ParseException, com.vividsolutions.jts.io.ParseException
-			{
-		SolrServer server = new ConcurrentUpdateSolrServer("http://localhost:8983/solr", 16, 8);
+          doc.addField("geo", wkt);
+        }
+      }
+      if (centroid != null)
+        for (int l = 1; l < adminLevel; l++) {
+          SolrDocument parent = Utils.getContainingPolygon(server, (float)centroid.getY(), (float)centroid.getX(), l);
+          if (parent != null)
+            doc.addField("admin" + l, parent.get("name"));
+        }
+      try
+      {
+        server.add(doc);
+      } catch (Exception ex) {
+        System.err.println("Document failed: " + ex);
+      }
 
-		AdminPolygonIndexer indexer = new AdminPolygonIndexer();
+      counter++;
+    }
 
-		DB db = DBMaker.newFileDB(new File("jdbm/test")).closeOnJvmShutdown().make();
+    server.commit();
+  }
 
-		//indexer.indexPolygons(server, db, 2);
-		//indexer.indexPolygons(server, db, 4);
-		indexer.indexPolygons(server, db, 5);
+  public static void main(String[] args)
+      throws SolrServerException, IOException, ClassNotFoundException, java.text.ParseException, com.vividsolutions.jts.io.ParseException
+  {
+    SolrServer server = new ConcurrentUpdateSolrServer("http://localhost:8983/solr", 16, 8);
 
-		System.out.println("Committing...");
-		server.commit();
+    AdminPolygonIndexer indexer = new AdminPolygonIndexer();
 
-		System.out.println("Done! "+new Date());
-			}
+    DB db = DBMaker.newFileDB(new File("jdbm/test")).closeOnJvmShutdown().make();
+
+    //indexer.indexPolygons(server, db, 2);
+    //indexer.indexPolygons(server, db, 4);
+    indexer.indexPolygons(server, db, 5);
+
+    System.out.println("Committing...");
+    server.commit();
+
+    System.out.println("Done! "+new Date());
+  }
 }
 
 /* Location:           /data/indexer-main.jar

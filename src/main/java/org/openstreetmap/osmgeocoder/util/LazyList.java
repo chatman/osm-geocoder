@@ -200,8 +200,3 @@ implements Cloneable, Serializable
 		return getList(list).listIterator();
 	}
 }
-
-/* Location:           /data/indexer-main.jar
- * Qualified Name:     org.openstreetmap.osmgeocoder.util.LazyList
- * JD-Core Version:    0.6.2
- */

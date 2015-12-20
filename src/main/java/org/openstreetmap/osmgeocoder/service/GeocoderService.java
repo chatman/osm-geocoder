@@ -21,8 +21,3 @@ public class GeocoderService
 		server.join();
 			}
 }
-
-/* Location:           /data/indexer-main.jar
- * Qualified Name:     org.openstreetmap.osmgeocoder.service.GeocoderService
- * JD-Core Version:    0.6.2
- */

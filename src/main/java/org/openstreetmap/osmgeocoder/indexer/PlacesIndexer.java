@@ -85,7 +85,7 @@ public class PlacesIndexer
   @SuppressWarnings("unchecked")
   void indexLocalitiesAndSuburbs(SolrServer server)
       throws IOException, ClassNotFoundException, ParseException, SolrServerException
-      {
+  {
     FileInputStream fin = new FileInputStream(this.placesFilename);
     ObjectInputStream ois = new ObjectInputStream(fin);
     List<Node> places = (List<Node>)ois.readObject();
@@ -157,12 +157,12 @@ public class PlacesIndexer
 
     System.out.println(counter);
     server.commit();
-      }
+  }
 
   @SuppressWarnings("unchecked")
   void indexPlaces(SolrServer placesServer, SolrServer server, DB mapDb, String poiFilename)
       throws ClassNotFoundException, IOException, SolrServerException, ParseException
-      {
+  {
     WKTReader wktReader = new WKTReader();
 
     FileInputStream fin = new FileInputStream(poiFilename);
@@ -209,7 +209,7 @@ public class PlacesIndexer
 			SolrDocument admin4 = Utils.getContainingPolygon(server, node, 4);
 			SolrDocument admin5 = Utils.getContainingPolygon(server, node, 5);*/
       SolrDocument parent = Utils.getContainingPolygonLowest(server, node, 5);
-      
+
       SolrInputDocument doc = new SolrInputDocument();
 
       for (String key : this.poiKeys) {
@@ -246,14 +246,14 @@ public class PlacesIndexer
     }
 
     placesServer.commit();
-      }
+  }
 
   public static void main(String[] args)
       throws ClassNotFoundException, IOException, SolrServerException, ParseException
-      {
+  {
     SolrServer server = new ConcurrentUpdateSolrServer("http://localhost:8983/solr", 8, 4);
     SolrServer placesServer = new ConcurrentUpdateSolrServer("http://localhost:8983/solr/places", 1024, 32);
-    
+
     placesServer.deleteByQuery("*:*");
     placesServer.commit();
 
@@ -265,7 +265,7 @@ public class PlacesIndexer
     //indexer.indexLocalitiesAndSuburbs(placesServer);
 
     db.close();
-      }
+  }
 }
 
 /* Location:           /data/indexer-main.jar

@@ -26,7 +26,7 @@ public class IndexerMain
   static DB mapDb;
   static boolean delete = true;
   static boolean osmRead = true;
-  
+
   static PlacesIndexer placesIndexer;
 
   public static void main(String[] args) throws Exception
@@ -48,7 +48,7 @@ public class IndexerMain
     server = new ConcurrentUpdateSolrServer("http://localhost:8983/solr/collection1", 64, 16);
     placesServer = new ConcurrentUpdateSolrServer("http://localhost:8983/solr/places", 32, 16);
 
-    mapDb = DBMaker.newFileDB(new File(jdbm)).closeOnJvmShutdown().asyncWriteEnable().make();
+    mapDb = DBMaker.newFileDB(new File(jdbm)).closeOnJvmShutdown().transactionDisable().asyncWriteEnable().make();
 
     if (delete) {
       System.out.println("Deleting docs..");
@@ -110,13 +110,13 @@ public class IndexerMain
 
     Thread thread3 = new Thread() {
       public void run() {
-          try {
-            placesIndexer.indexPlaces(placesServer, server, mapDb, "pois." + country + ".ser");
-          } catch (ClassNotFoundException | IOException | SolrServerException
-              | ParseException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-          }
+        try {
+          placesIndexer.indexPlaces(placesServer, server, mapDb, "pois." + country + ".ser");
+        } catch (ClassNotFoundException | IOException | SolrServerException
+            | ParseException e) {
+          // TODO Auto-generated catch block
+          e.printStackTrace();
+        }
       }
     };
 
@@ -135,7 +135,7 @@ public class IndexerMain
     };
     thread3.start();
     thread4.start();
-    
+
     thread4.join();
     System.out.println("---- Streets indexing done ----" + new Date());
 

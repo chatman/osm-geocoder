@@ -81,7 +81,7 @@ public class OsmReaderFromSplit
     parse(RELATIONS, PROCESS);
     System.out.println(new Date());
   }
-  
+
   private void parse(int type, int mode) throws FileNotFoundException, IOException, ClassNotFoundException {
     XPathRecordReader nodeReader = null;
     InputStream is = null;
