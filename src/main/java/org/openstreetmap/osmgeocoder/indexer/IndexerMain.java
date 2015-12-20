@@ -40,9 +40,9 @@ public class IndexerMain
     }
 
     if (args.length >= 6)
-      delete = Boolean.parseBoolean(args[3]);
+      delete = Boolean.parseBoolean(args[5]);
     if (args.length >= 7) {
-      osmRead = Boolean.parseBoolean(args[4]);
+      osmRead = Boolean.parseBoolean(args[6]);
     }
 
     server = new ConcurrentUpdateSolrServer("http://localhost:8983/solr/collection1", 64, 16);
